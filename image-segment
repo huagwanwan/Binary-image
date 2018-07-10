@@ -1,0 +1,143 @@
+// img_seg.cpp : Defines the entry point for the console application.
+//
+//姓名 = this.ocr(830, 100, 300, 80).Replace("\r\n", ""),
+//出生年月 = this.ocr(0x2e9, 190, 230, 100).Replace("\r\n", ""),
+//性别 = this.ocr(0x429, 200, 110, 0x55).Replace("\r\n", ""),
+//籍贯 = this.ocr(0x2e9, 300, 430, 100).Replace("\r\n", ""),
+//民族 = this.ocr(750, 0x19f, 420, 100).Replace("\r\n", ""),
+//部别 = this.ocr(0x2e9, 520, 430, 100).Replace("\r\n", ""),
+//职务 = this.ocr(0x2e9, 630, 430, 90).Replace("\r\n", ""),
+//衔级 = this.ocr(0x2e9, 740, 430, 90).Replace("\r\n", ""),
+//编号 = this.ocr(200, 400, 450, 60).Replace("\r\n", ""),
+////发证机关 = this.ocr(30, 500, 200, 60).Replace("\r\n", ""),
+//发证机关 = this.ocr(200, 500, 450, 70).Replace("\r\n", ""),
+//发证日期 = this.ocr(200, 600, 450, 60).Replace("\r\n", ""),
+//有效期至 = this.ocr(200, 660, 450, 60).Replace("\r\n", "")
+
+#pragma warning(disable:4996)
+#include "stdafx.h"
+#define cvQueryHistValue_1D( hist, idx0 )  ((float)cvGetReal1D( (hist)->bins, (idx0))) 
+using namespace cv;
+#include <io.h>
+#include<iostream>
+#include<fstream>
+
+
+
+int main(int argc, _TCHAR* argv[])
+{
+
+	struct _finddata_t  file;
+	intptr_t  If;
+	std::string path, tempPath;    //遍历文件夹中的所有图片
+	Mat imageROI;
+	int otsu_1(Mat src);
+
+	int idx = 0;
+	char  addr[100];
+
+	Rect rect1 = Rect(830, 100, 300, 80);
+	Rect rect2 = Rect(0x2e9, 190, 230, 100);
+	Rect rect3 = Rect(0x429, 200, 110, 0x55);
+	Rect rect4 = Rect(0x2e9, 300, 430, 100);
+	Rect rect5 = Rect(750, 0x19f, 420, 100);
+	Rect rect6 = Rect(0x2e9, 520, 430, 100);
+	Rect rect7 = Rect(0x2e9, 630, 430, 90);
+	Rect rect8 = Rect(0x2e9, 740, 430, 90);
+	Rect rect9 = Rect(200, 400, 450, 60);
+	Rect rect10 = Rect(200, 500, 450, 70);
+	Rect rect11 = Rect(200, 600, 450, 60);
+	Rect rect12 = Rect(200, 660, 450, 60);
+	string names[12] = { "姓名","出生年月","性别","籍贯","民族","部别","职务","衔级", "编号","发证机关","发证日期","有效期至" };
+	string addr1 = "D:\\图像分割\\高拍仪 图片\\2\\";
+	ofstream mycout("D:\\图像分割\\高拍仪 图片\\temp.txt");
+
+	Rect rects[] = { rect1,rect2,rect3,rect4,rect5,rect6,rect7,rect8,rect9,rect10,rect11,rect12 };
+
+	//多个ROI图像区域
+	path = "D:\\图像分割\\高拍仪 图片"; //文件的路径
+	tempPath = path;
+
+	if ((If = _findfirst(path.append("\\*").c_str(), &file)) == -1)
+
+	{
+
+		std::cout << "Not find image file" << std::endl;
+
+	}
+
+	else
+
+	{
+
+		while (_findnext(If, &file) == 0)
+
+		{			
+			mycout << "file name: " << path.substr(0, path.length() - 1) << file.name << std::endl;
+			Mat image = imread(tempPath + "\\" + file.name);//第一个图片路径..是打不开的
+			if (image.empty())
+
+			{
+
+				printf("picture read error");
+
+				continue;
+
+			}
+
+			for (int i = 0; i < 12; i++)
+			{
+				image(rects[i]).copyTo(imageROI);
+				/*imshow("ROI", imageROI);*/
+				Mat gray;
+
+				cvtColor(imageROI, gray, CV_BGR2GRAY);
+
+				Mat dst;
+				int th = otsu_1(gray);
+
+				mycout << names[i] << ":" << "阈值" << th << endl;
+
+				/*图像的二值化*/
+				threshold(gray, dst, th, 255, THRESH_BINARY);
+
+				//threshold(gray, dst, 0, 255, CV_THRESH_OTSU);
+				/*namedWindow("二值化图像");
+
+				imshow("二值化图像", dst);*/
+			
+				imwrite(addr1 + file.name+ names[i] + ".jpg", dst);
+
+				waitKey();
+			}
+		}
+
+		
+	}
+
+	_findclose(If);
+	mycout.close();
+	return 0;
+
+	//一个ROI图像区域
+		//Mat image = imread("D:\\图像分割\\高拍仪 图片\\2.jpg");
+		
+
+		/*image(Rect(830, 100, 300, 80)).copyTo(imageROI);
+		imshow("ROI", imageROI);
+		Mat gray;
+
+		cvtColor(imageROI, gray, CV_BGR2GRAY);
+		
+		Mat dst;
+
+		threshold(gray, dst, 0, 255, CV_THRESH_OTSU);
+		namedWindow("二值化图像");
+
+		imshow("二值化图像", dst);
+		sprintf_s(addr,"D:\\图像分割\\%d_temp.jpg", ++idx);
+    	imwrite(addr,dst);
+		waitKey();*/
+
+
+}
